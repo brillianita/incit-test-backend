@@ -1,0 +1,29 @@
+{
+  "name": "backend-incit-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "migrate": "node-pg-migrate"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "nanoid": "^3.3.7",
+    "pg": "^8.12.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.8.0",
+    "eslint": "^9.8.0",
+    "eslint-config-dicodingacademy": "^0.9.4",
+    "globals": "^15.9.0",
+    "node-pg-migrate": "^7.6.1",
+    "nodemon": "^3.1.4"
+  }
+}
