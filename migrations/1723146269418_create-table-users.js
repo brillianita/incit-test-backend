@@ -9,6 +9,7 @@ exports.up = (pgm) => {
     name: {
       type: 'VARCHAR(50)',
       notNull: false,
+      default: null
     },
     email: {
       type: 'TEXT',
@@ -22,6 +23,7 @@ exports.up = (pgm) => {
     verification_token: {
       type: 'TEXT',
       notNull: false,
+      default: null
     },
     is_verified: {
       type: 'BOOLEAN',
@@ -36,6 +38,7 @@ exports.up = (pgm) => {
     updated_at: {
       type: 'TIMESTAMP',
       notNull: true,
+      default: null
     },
     login_count: {
       type: 'INTEGER',
@@ -45,10 +48,12 @@ exports.up = (pgm) => {
     last_login_at: {
       type: 'TIMESTAMP',
       notNull: false,
+      default: null
     },
     logout_at: {
       type: 'TIMESTAMP',
       notNull: false,
+      default: null
     },
   });
 };
