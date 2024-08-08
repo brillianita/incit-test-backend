@@ -38,7 +38,7 @@ const verifyNewEmail = async (email) => {
   const result = await pool.query(query);
 
   if (result.rows.length > 0) {
-    throw new InvariantError('ailed to add user. Username is already in use.');
+    throw new InvariantError('Failed to add user. Username is already in use.');
   }
 };
 
