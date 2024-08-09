@@ -2,6 +2,9 @@ const express = require('express');
 const app = express();
 const ClientError = require('./exceptions/ClientError');
 const cookieParser = require('cookie-parser');
+const session = require('express-session');
+const passport = require('passport');
+require('./config/passportSetup')(passport);
 
 app.use(cookieParser());
 
@@ -23,9 +26,21 @@ app.listen(PORT, () => {
   console.log(`API is listening on port ${PORT}`);
 });
 
+// Configure session middleware
+app.use(session({
+  secret: 'secret',
+  resave: false,
+  saveUninitialized: false,
+}));
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
+
 // Routing API using base path variable
 app.use(userRoutes);
 app.use(authenticationRoutes);
+
 
 app.use((err, req, res, next) => {
   if (err instanceof Error) {

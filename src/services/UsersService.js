@@ -2,23 +2,27 @@ const bcrypt = require('bcrypt');
 const pool = require('../config/db');
 const { nanoid } = require('nanoid');
 const InvariantError = require('../exceptions/InvariantError');
+const NotFoundError = require('../exceptions/NotFoundError');
 const AuthenticationError = require('../exceptions/AuthenticationError');
 
-const addUser = async ({ email, password, confirmPassword }) => {
+const addUser = async ({ name, email, password, confirmPassword, isVerified }) => {
+  let hashedPassword;
+  if (password) {
+    hashedPassword = await bcrypt.hash(password, 10);
+    if (password != confirmPassword) {
+      throw new InvariantError('The passwords entered do not match. Please try again');
+    };
+  }
   await verifyNewEmail(email);
 
   const id = `user-${nanoid(16)}`;
-  const hashedPassword = await bcrypt.hash(password, 10);
   const verificationToken = nanoid(16);
   const updatedAt = new Date();
 
-  if (password != confirmPassword) {
-    throw new InvariantError('The passwords entered do not match. Please try again');
-  };
 
   const query = {
-    text: 'INSERT INTO users VALUES($1, DEFAULT, $2, $3, $4, DEFAULT, DEFAULT, $5, DEFAULT, DEFAULT, DEFAULT) RETURNING *',
-    values: [id, email, hashedPassword, verificationToken, updatedAt],
+    text: 'INSERT INTO users VALUES($1, $2, $3, $4, $5, $6, DEFAULT, $7, DEFAULT, DEFAULT, DEFAULT) RETURNING *',
+    values: [id, name, email, hashedPassword, verificationToken, isVerified, updatedAt],
   };
 
   const result = await pool.query(query);
@@ -41,6 +45,21 @@ const verifyNewEmail = async (email) => {
   if (result.rows.length > 0) {
     throw new InvariantError('Failed to add user. Username is already in use.');
   }
+};
+
+const findUserById = async (id) => {
+  const query = {
+    text: 'SELECT * FROM users WHERE id = $1',
+    values: [id],
+  };
+
+  const result = await pool.query(query);
+
+  if (result.rows.length === 0) {
+    throw new NotFoundError('Not found');
+  }
+  console.log('hasil findbyid', result.rows);
+  return result.rows;
 };
 
 const verifyUserCredential = async ({ email, password }) => {
@@ -68,6 +87,7 @@ const verifyUserCredential = async ({ email, password }) => {
 
 module.exports = {
   addUser,
+  findUserById,
   verifyNewEmail,
   verifyUserCredential
 };

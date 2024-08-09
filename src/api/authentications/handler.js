@@ -1,8 +1,7 @@
 const tokenManager = require('../../tokenize/tokenManager');
 const { verifyUserCredential } = require('../../services/usersService');
 
-const postAuthentication = async (req, res) => {
-
+const postAuthenticationByEmail = async (req, res) => {
   const { email, password } = req.body;
   const id = await verifyUserCredential({ email, password });
   const token = tokenManager.generateAccessToken({ id });
@@ -21,7 +20,24 @@ const postAuthentication = async (req, res) => {
   return response;
 };
 
+const postAuthenticationByGoogle = async (req, res) => {
+  res.redirect('/profile');
+};
+
+const profile = async (req, res) => {
+  res.send('Success');
+};
+
+const deleteAuthentication = async (req, res) => {
+  req.logout();
+  res.clearCookie('connect.sid');
+  res.redirect('/');
+};
+
 
 module.exports = {
-  postAuthentication,
+  postAuthenticationByEmail,
+  postAuthenticationByGoogle,
+  deleteAuthentication,
+  profile
 };
