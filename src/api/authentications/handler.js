@@ -24,6 +24,10 @@ const postAuthenticationByGoogle = async (req, res) => {
   res.redirect('/profile');
 };
 
+const postAuthenticationByFacebook = async (req, res) => {
+  res.redirect('/profile');
+};
+
 const profile = async (req, res) => {
   res.send('Success');
 };
@@ -38,6 +42,7 @@ const deleteAuthentication = async (req, res) => {
 module.exports = {
   postAuthenticationByEmail,
   postAuthenticationByGoogle,
+  postAuthenticationByFacebook,
   deleteAuthentication,
   profile
 };
