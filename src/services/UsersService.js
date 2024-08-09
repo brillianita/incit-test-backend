@@ -17,16 +17,17 @@ const addUser = async ({ email, password, confirmPassword }) => {
   };
 
   const query = {
-    text: 'INSERT INTO users VALUES($1, DEFAULT, $2, $3, $4, DEFAULT, DEFAULT, $5, DEFAULT, DEFAULT, DEFAULT) RETURNING id',
+    text: 'INSERT INTO users VALUES($1, DEFAULT, $2, $3, $4, DEFAULT, DEFAULT, $5, DEFAULT, DEFAULT, DEFAULT) RETURNING *',
     values: [id, email, hashedPassword, verificationToken, updatedAt],
   };
 
   const result = await pool.query(query);
 
+
   if (!result.rows.length) {
     throw new InvariantError('Failed to add user. Please try again');
   }
-  return result.rows[0].id;
+  return result.rows[0];
 };
 
 const verifyNewEmail = async (email) => {

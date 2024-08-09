@@ -1,5 +1,6 @@
 const { validateUser } = require('../../validators/user');
 const { addUser } = require('../../services/UsersService');
+const { sendVerificationEmail } = require('../../services/emailService');
 const InvariantError = require('../../exceptions/InvariantError');
 const ClientError = require('../../exceptions/ClientError');
 
@@ -12,6 +13,8 @@ const postUserHandler = async (req, res) => {
     }
 
     const userId = await addUser({ email, password, confirmPassword });
+    console.log(userId);
+    await sendVerificationEmail(email, userId.verification_token);
 
     const response = res.status(201).json({
       status: 'success',
@@ -29,7 +32,7 @@ const postUserHandler = async (req, res) => {
     }
     return res.status(500).send({
       status: 'fail',
-      message: 'Sorry there was a failure on our server.',
+      message: e,
     });
   }
 };
