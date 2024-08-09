@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const pool = require('../config/db');
 const { nanoid } = require('nanoid');
+const { mapDBToModel } = require('../utils');
 const InvariantError = require('../exceptions/InvariantError');
 const AuthenticationError = require('../exceptions/AuthenticationError');
 
@@ -48,8 +49,8 @@ const findUserById = async (keyword) => {
     values: [keyword],
   };
 
-  const result = await pool.query(query);
-  return result.rows;
+  const { rows } = await pool.query(query);
+  return rows.map(mapDBToModel);
 };
 
 const verifyEmailByToken = async ({ token }) => {
@@ -99,11 +100,35 @@ const editNameById = async ({ id, name }) => {
   return rows[0];
 };
 
+const editPasswordById = async ({ oldPassword, newPassword, confirmPassword, id }) => {
+
+  const result = await findUserById(id);
+  console.log('result', result[0]);
+  const match = await bcrypt.compare(oldPassword, result[0].password);
+  if (!match) {
+    throw new AuthenticationError('The old password you entered is incorrect.');
+  }
+  if (newPassword !== confirmPassword) {
+    throw new InvariantError('The passwords entered do not match. Please try again');
+  }
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  const query = {
+    text: 'UPDATE users SET password = $1 WHERE id = $2 RETURNING id',
+    values: [hashedPassword, id]
+  };
+  const { rows } = await pool.query(query);
+  if (!rows[0]) {
+    throw new InvariantError('Fail to update name. id invalid');
+  }
+  return rows[0];
+};
+
 
 module.exports = {
   addUser,
   findUserById,
   verifyUserCredential,
   verifyEmailByToken,
-  editNameById
+  editNameById,
+  editPasswordById
 };
