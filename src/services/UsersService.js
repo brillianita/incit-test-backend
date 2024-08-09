@@ -52,6 +52,18 @@ const findUserById = async (keyword) => {
   return result.rows;
 };
 
+const verifyEmailByToken = async ({ token }) => {
+  const query = {
+    text: 'UPDATE users SET is_verified = true WHERE verification_token = $1 RETURNING id',
+    values: [token]
+  };
+  const { rows } = await pool.query(query);
+  if (!rows[0]) {
+    throw new InvariantError('Token invalid');
+  }
+  return 'Verification email success';
+};
+
 const verifyUserCredential = async ({ email, password }) => {
   const query = {
     text: 'SELECT id, password FROM users WHERE email = $1 AND is_verified = true',
@@ -75,8 +87,10 @@ const verifyUserCredential = async ({ email, password }) => {
   return id;
 };
 
+
 module.exports = {
   addUser,
   findUserById,
-  verifyUserCredential
+  verifyUserCredential,
+  verifyEmailByToken,
 };

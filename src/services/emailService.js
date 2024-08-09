@@ -15,7 +15,7 @@ const sendVerificationEmail = async (to, token) => {
     to: to,
     subject: 'Verify Your Email',
     html: `<p>Thank you for registering with us. Please verify your email by clicking on the link below:</p>
-               <a href="http://localhost:3300/verify-email?token=${token}">Verify Email</a>`
+               <a href="${process.env.BASE_URL}/verify-email?token=${token}">Verify Email</a>`
   };
 
   try {
