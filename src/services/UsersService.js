@@ -5,33 +5,45 @@ const { mapDBToModel } = require('../utils');
 const InvariantError = require('../exceptions/InvariantError');
 const AuthenticationError = require('../exceptions/AuthenticationError');
 
-const addUser = async ({ name, email, password, confirmPassword, isVerified }) => {
+const addUser = async ({ name, email, password, confirmPassword, isVerified, isOauth }) => {
+  const existUser = await findUserById(email);
+  const updatedAt = new Date();
+  let lastLoginAt;
+  let logoutAt;
   let hashedPassword;
   let loginCount;
-  const existUser = await findUserById(email);
 
-  if (existUser[0]) {
-    throw new InvariantError('Fail to add user. Email already exist');
+  if (isOauth) {
+    loginCount = 1;
+    lastLoginAt = new Date();
+    logoutAt = null;
+    if (existUser[0]) {
+      updateLoginInfo(existUser[0].loginCount, lastLoginAt, updatedAt, email);
+      return existUser[0];
+    }
+  } else {
+    if (existUser[0]) {
+      throw new InvariantError('Fail to add user. Email already exist');
+    }
   }
 
   if (password) {
+    lastLoginAt = null;
+    logoutAt = null;
     if (password != confirmPassword) {
       throw new InvariantError('The passwords entered do not match. Please try again');
     };
     hashedPassword = await bcrypt.hash(password, 10);
     loginCount = 0;
-  } else {
-    loginCount = 1;
   }
 
   const id = `user-${nanoid(16)}`;
   const verificationToken = nanoid(16);
-  const updatedAt = new Date();
 
 
   const query = {
-    text: 'INSERT INTO users VALUES($1, $2, $3, $4, $5, $6, DEFAULT, $7, $8, DEFAULT, DEFAULT) RETURNING *',
-    values: [id, name, email, hashedPassword, verificationToken, isVerified, updatedAt, loginCount],
+    text: 'INSERT INTO users VALUES($1, $2, $3, $4, $5, $6, DEFAULT, $7, $8, $9, $10, $11) RETURNING *',
+    values: [id, name, email, hashedPassword, verificationToken, isVerified, updatedAt, loginCount, lastLoginAt, logoutAt, isOauth],
   };
 
   const result = await pool.query(query);
@@ -41,6 +53,16 @@ const addUser = async ({ name, email, password, confirmPassword, isVerified }) =
     throw new InvariantError('Failed to add user. Please try again');
   }
   return result.rows[0];
+};
+
+const updateLoginInfo = async (oldLoginCount, lastLoginAt, updatedAt, email) => {
+  const loginCount = oldLoginCount + 1;
+  const query = {
+    text: 'UPDATE users SET login_count = $1, last_login_at = $2, updated_at = $3 WHERE email = $4 RETURNING *',
+    values: [loginCount, lastLoginAt, updatedAt, email]
+  };
+  const { rows } = await pool.query(query);
+  return rows;
 };
 
 const findUserById = async (keyword) => {
@@ -146,6 +168,7 @@ const findUsersStatistics = async () => {
 
   return result;
 };
+
 
 module.exports = {
   addUser,

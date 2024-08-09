@@ -54,6 +54,11 @@ exports.up = (pgm) => {
       notNull: false,
       default: null
     },
+    is_oauth: {
+      type: 'BOOLEAN',
+      notNull: true,
+      default: false
+    },
   });
 };
 

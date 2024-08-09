@@ -6,12 +6,12 @@ const InvariantError = require('../../exceptions/InvariantError');
 const postUserHandler = async (req, res) => {
 
   const { email, password, confirmPassword } = req.body;
-  const validationResult = validateUser({ email, password });
+  const validationResult = validateUser({ password });
   if (!validationResult.isValid) {
     throw new InvariantError(`Validation error: ${validationResult.message}`);
   }
 
-  const userId = await addUser({ name: null, email, password, confirmPassword, isVerified: false });
+  const userId = await addUser({ name: null, email, password, confirmPassword, isVerified: false, isOauth: false });
   await sendVerificationEmail(email, userId.verification_token);
 
   const response = res.status(201).json({
@@ -49,6 +49,11 @@ const putNameById = async (req, res) => {
 const putPasswordById = async (req, res) => {
   const { oldPassword, newPassword, confirmPassword } = req.body;
   const { id } = req.params;
+  const validationResult = validateUser({ newPassword });
+  if (!validationResult.isValid) {
+    throw new InvariantError(`Validation error: ${validationResult.message}`);
+  }
+
   const result = await editPasswordById({ oldPassword, newPassword, confirmPassword, id });
 
   const response = res.status(201).json({

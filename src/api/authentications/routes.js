@@ -3,7 +3,8 @@ const {
   postAuthenticationByEmail,
   postAuthenticationByGoogle,
   profile,
-  postAuthenticationByFacebook } = require('./handler');
+  postAuthenticationByFacebook,
+  deleteAuthentication } = require('./handler');
 const passport = require('passport');
 const router = Router();
 
@@ -20,5 +21,7 @@ router.get('/auth/google/callback', passport.authenticate('google', { failureRed
 router.get('/auth/facebook', passport.authenticate('facebook', { scope: ['email', 'public_profile'] }));
 router.get('/auth/facebook/callback', passport.authenticate('facebook', { failureRedirect: '/' }), postAuthenticationByFacebook);
 router.get('/profile', profile);
+
+router.get('/logout', deleteAuthentication);
 
 module.exports = router;

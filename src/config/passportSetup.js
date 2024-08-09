@@ -12,7 +12,7 @@ module.exports = (passport) => {
   },
   async (accessToken, refreshToken, profile, done) => {
     const { name, email } = profile._json;
-    const user = await addUser({ name, email, password: null, confirmPassword: null, isVerified: true });
+    const user = await addUser({ name, email, password: null, confirmPassword: null, isVerified: true, isOauth: true });
     done(null, user);
   }));
   passport.use(new FacebookStrategy({
@@ -23,18 +23,18 @@ module.exports = (passport) => {
     profileFields: ['id', 'email', 'name']
   },
   async (accessToken, refreshToken, profile, done) => {
-    const { displayName, email } = profile._json;
-    const user = await addUser({ displayName, email, password: null, confirmPassword: null, isVerified: true });
+    // eslint-disable-next-line camelcase
+    const { first_name, email } = profile._json;
+    // eslint-disable-next-line camelcase
+    const user = await addUser({ name: first_name, email, password: null, confirmPassword: null, isVerified: true, isOauth: true });
     done(null, user);
   }));
 
   passport.serializeUser((user, done) => {
-    console.log(2);
     done(null, user.id);
   });
 
   passport.deserializeUser((id, done) => {
-    console.log(id);
     findUserById(id).then((user) => done(null, user)).catch((err) => done(err, null));
   });
 };

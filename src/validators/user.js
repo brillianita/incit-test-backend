@@ -1,7 +1,6 @@
 const Joi = require('joi');
 
 const userPayloadSchema = Joi.object({
-  email: Joi.string().email(),
   password: Joi.string()
     .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[\\W_]).{8,}$'))
     .required()

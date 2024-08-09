@@ -67,8 +67,21 @@ const profile = async (req, res) => {
 };
 
 const deleteAuthentication = async (req, res) => {
-  req.logout();
-  res.clearCookie('connect.sid');
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production', // use secure in production
+  });
+
+  // Optional: Destroy the session if using session-based authentication
+  if (req.session) {
+    req.session.destroy((err) => {
+      if (err) {
+        console.log('Error destroying session:', err);
+      }
+    });
+  }
+
+  // Redirect user to the homepage or login page
   res.redirect('/');
 };
 
