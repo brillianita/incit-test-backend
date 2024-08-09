@@ -11,7 +11,7 @@ const postUserHandler = async (req, res) => {
     throw new InvariantError(`Validation error: ${validationResult.message}`);
   }
 
-  const userId = await addUser({ email, password, confirmPassword });
+  const userId = await addUser({ name: null, email, password, confirmPassword, isVerified: false });
   console.log(userId);
   await sendVerificationEmail(email, userId.verification_token);
 

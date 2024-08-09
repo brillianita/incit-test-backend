@@ -23,7 +23,6 @@ module.exports = (passport) => {
     profileFields: ['id', 'email', 'name']
   },
   async (accessToken, refreshToken, profile, done) => {
-    console.log('profile', profile);
     const { displayName, email } = profile._json;
     const user = await addUser({ displayName, email, password: null, confirmPassword: null, isVerified: true });
     done(null, user);

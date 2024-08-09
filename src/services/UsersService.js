@@ -2,18 +2,26 @@ const bcrypt = require('bcrypt');
 const pool = require('../config/db');
 const { nanoid } = require('nanoid');
 const InvariantError = require('../exceptions/InvariantError');
-const NotFoundError = require('../exceptions/NotFoundError');
 const AuthenticationError = require('../exceptions/AuthenticationError');
 
 const addUser = async ({ name, email, password, confirmPassword, isVerified }) => {
   let hashedPassword;
+  let loginCount;
+  const existUser = await findUserById(email);
+
+  if (existUser[0]) {
+    throw new InvariantError('Fail to add user. Email already exist');
+  }
+
   if (password) {
-    hashedPassword = await bcrypt.hash(password, 10);
     if (password != confirmPassword) {
       throw new InvariantError('The passwords entered do not match. Please try again');
     };
+    hashedPassword = await bcrypt.hash(password, 10);
+    loginCount = 0;
+  } else {
+    loginCount = 1;
   }
-  await verifyNewEmail(email);
 
   const id = `user-${nanoid(16)}`;
   const verificationToken = nanoid(16);
@@ -21,8 +29,8 @@ const addUser = async ({ name, email, password, confirmPassword, isVerified }) =
 
 
   const query = {
-    text: 'INSERT INTO users VALUES($1, $2, $3, $4, $5, $6, DEFAULT, $7, DEFAULT, DEFAULT, DEFAULT) RETURNING *',
-    values: [id, name, email, hashedPassword, verificationToken, isVerified, updatedAt],
+    text: 'INSERT INTO users VALUES($1, $2, $3, $4, $5, $6, DEFAULT, $7, $8, DEFAULT, DEFAULT) RETURNING *',
+    values: [id, name, email, hashedPassword, verificationToken, isVerified, updatedAt, loginCount],
   };
 
   const result = await pool.query(query);
@@ -34,31 +42,13 @@ const addUser = async ({ name, email, password, confirmPassword, isVerified }) =
   return result.rows[0];
 };
 
-const verifyNewEmail = async (email) => {
+const findUserById = async (keyword) => {
   const query = {
-    text: 'SELECT email FROM users WHERE email = $1',
-    values: [email],
+    text: 'SELECT * FROM users WHERE id = $1 OR email = $1',
+    values: [keyword],
   };
 
   const result = await pool.query(query);
-
-  if (result.rows.length > 0) {
-    throw new InvariantError('Failed to add user. Username is already in use.');
-  }
-};
-
-const findUserById = async (id) => {
-  const query = {
-    text: 'SELECT * FROM users WHERE id = $1',
-    values: [id],
-  };
-
-  const result = await pool.query(query);
-
-  if (result.rows.length === 0) {
-    throw new NotFoundError('Not found');
-  }
-  console.log('hasil findbyid', result.rows);
   return result.rows;
 };
 
@@ -88,6 +78,5 @@ const verifyUserCredential = async ({ email, password }) => {
 module.exports = {
   addUser,
   findUserById,
-  verifyNewEmail,
   verifyUserCredential
 };

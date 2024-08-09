@@ -10,7 +10,7 @@ const router = Router();
 
 router.post('/login', postAuthenticationByEmail);
 router.get('/', (req, res) => {
-  res.send('<a href="/auth/facebook">Authenticate with Facebook</a>');
+  res.send('<a href="/auth/facebook">Authenticate with Facebook</a> <a href="/auth/google">Authenticate with Google</a>');
 });
 router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/' }), postAuthenticationByGoogle);
