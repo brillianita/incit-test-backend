@@ -87,10 +87,23 @@ const verifyUserCredential = async ({ email, password }) => {
   return id;
 };
 
+const editNameById = async ({ id, name }) => {
+  const query = {
+    text: 'UPDATE users SET name = $1 WHERE id = $2 RETURNING id, email, name',
+    values: [name, id]
+  };
+  const { rows } = await pool.query(query);
+  if (!rows[0]) {
+    throw new InvariantError('Fail to update name. id invalid');
+  }
+  return rows[0];
+};
+
 
 module.exports = {
   addUser,
   findUserById,
   verifyUserCredential,
   verifyEmailByToken,
+  editNameById
 };
