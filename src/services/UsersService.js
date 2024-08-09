@@ -6,7 +6,7 @@ const InvariantError = require('../exceptions/InvariantError');
 const AuthenticationError = require('../exceptions/AuthenticationError');
 
 const addUser = async ({ name, email, password, confirmPassword, isVerified, isOauth }) => {
-  const existUser = await findUserById(email);
+  const existUser = await findUserByKeyword(email);
   const updatedAt = new Date();
   let lastLoginAt;
   let logoutAt;
@@ -65,7 +65,7 @@ const updateLoginInfo = async (oldLoginCount, lastLoginAt, updatedAt, email) => 
   return rows;
 };
 
-const findUserById = async (keyword) => {
+const findUserByKeyword = async (keyword) => {
   const query = {
     text: 'SELECT * FROM users WHERE id = $1 OR email = $1',
     values: [keyword],
@@ -124,7 +124,7 @@ const editNameById = async ({ id, name }) => {
 
 const editPasswordById = async ({ oldPassword, newPassword, confirmPassword, id }) => {
 
-  const result = await findUserById(id);
+  const result = await findUserByKeyword(id);
   console.log('result', result[0]);
   const match = await bcrypt.compare(oldPassword, result[0].password);
   if (!match) {
@@ -169,14 +169,32 @@ const findUsersStatistics = async () => {
   return result;
 };
 
+const editToken = async ({ email }) => {
+  const token = nanoid(16);
+  const query = {
+    text: 'UPDATE users SET verification_token = $1 WHERE email = $2 RETURNING id, is_verified, verification_token',
+    values: [token, email]
+  };
+  const { rows } = await pool.query(query);
+  const result = rows.map(mapDBToModel);
+  if (!result[0]) {
+    throw new InvariantError('Email invalid');
+  }
+  if (result[0].isVerified) {
+    throw new InvariantError('Email already verified');
+  }
+  return result[0];
+};
+
 
 module.exports = {
   addUser,
-  findUserById,
+  findUserByKeyword,
   verifyUserCredential,
   verifyEmailByToken,
   editNameById,
   editPasswordById,
   findUsers,
-  findUsersStatistics
+  findUsersStatistics,
+  editToken
 };

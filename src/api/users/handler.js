@@ -1,5 +1,5 @@
 const { validateUser } = require('../../validators/user');
-const { addUser, verifyEmailByToken, editNameById, editPasswordById, findUsers, findUsersStatistics } = require('../../services/usersService');
+const { addUser, verifyEmailByToken, editNameById, editPasswordById, findUsers, findUsersStatistics, editToken } = require('../../services/usersService');
 const { sendVerificationEmail } = require('../../services/emailService');
 const InvariantError = require('../../exceptions/InvariantError');
 const ClientError = require('../../exceptions/ClientError');
@@ -159,6 +159,29 @@ const getUsersStatistics = async (req, res) => {
   }
 };
 
+const resendEmailVerification = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const result = await editToken({ email });
+    await sendVerificationEmail(email, result.verificationToken);
+    const response = res.status(200).json({
+      status: 'success',
+      message: ' verication email was sent'
+    });
+    return response;
+  } catch (e) {
+    if (e instanceof ClientError) {
+      return res.status(e.statusCode).send({
+        status: 'fail',
+        message: e.message,
+      });
+    }
+    return res.status(500).send({
+      status: 'fail',
+      message: 'Sorry there was a failure on our server.',
+    });
+  }
+};
 
 module.exports = {
   postUserHandler,
@@ -166,5 +189,6 @@ module.exports = {
   putNameById,
   putPasswordById,
   getUsers,
-  getUsersStatistics
+  getUsersStatistics,
+  resendEmailVerification
 };
