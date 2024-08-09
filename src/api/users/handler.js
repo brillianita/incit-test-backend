@@ -2,83 +2,161 @@ const { validateUser } = require('../../validators/user');
 const { addUser, verifyEmailByToken, editNameById, editPasswordById, findUsers, findUsersStatistics } = require('../../services/usersService');
 const { sendVerificationEmail } = require('../../services/emailService');
 const InvariantError = require('../../exceptions/InvariantError');
+const ClientError = require('../../exceptions/ClientError');
 
 const postUserHandler = async (req, res) => {
-
-  const { email, password, confirmPassword } = req.body;
-  const validationResult = validateUser({ password });
-  if (!validationResult.isValid) {
-    throw new InvariantError(`Validation error: ${validationResult.message}`);
-  }
-
-  const userId = await addUser({ name: null, email, password, confirmPassword, isVerified: false, isOauth: false });
-  await sendVerificationEmail(email, userId.verification_token);
-
-  const response = res.status(201).json({
-    status: 'success',
-    data: {
-      userId
+  try {
+    const { email, password, confirmPassword } = req.body;
+    const validationResult = validateUser({ password });
+    if (!validationResult.isValid) {
+      throw new InvariantError(`Validation error: ${validationResult.message}`);
     }
-  });
-  return response;
+
+    const userId = await addUser({ name: null, email, password, confirmPassword, isVerified: false, isOauth: false });
+    await sendVerificationEmail(email, userId.verification_token);
+
+    const response = res.status(201).json({
+      status: 'success',
+      data: {
+        userId
+      }
+    });
+    return response;
+  } catch (e) {
+    if (e instanceof ClientError) {
+      return res.status(e.statusCode).send({
+        status: 'fail',
+        message: e.message,
+      });
+    }
+    return res.status(500).send({
+      status: 'fail',
+      message: 'Sorry there was a failure on our server.',
+    });
+  }
 };
 
 const putVerifyEmail = async (req, res) => {
-  const { token } = req.query;
-  const result = await verifyEmailByToken({ token });
+  try {
+    const { token } = req.query;
+    const result = await verifyEmailByToken({ token });
 
-  const response = res.status(201).json({
-    status: 'success',
-    message: result
-  });
-  return response;
+    const response = res.status(201).json({
+      status: 'success',
+      message: result
+    });
+    return response;
+  } catch (e) {
+    if (e instanceof ClientError) {
+      return res.status(e.statusCode).send({
+        status: 'fail',
+        message: e.message,
+      });
+    }
+    return res.status(500).send({
+      status: 'fail',
+      message: 'Sorry there was a failure on our server.',
+    });
+  }
 };
 
 const putNameById = async (req, res) => {
-  const { name } = req.body;
-  const { id } = req.params;
-  const result = await editNameById({ name, id });
+  try {
+    const { name } = req.body;
+    const { id } = req.params;
+    const result = await editNameById({ name, id });
 
-  const response = res.status(201).json({
-    status: 'success',
-    message: result
-  });
-  return response;
+    const response = res.status(201).json({
+      status: 'success',
+      message: result
+    });
+    return response;
+  } catch (e) {
+    if (e instanceof ClientError) {
+      return res.status(e.statusCode).send({
+        status: 'fail',
+        message: e.message,
+      });
+    }
+    return res.status(500).send({
+      status: 'fail',
+      message: 'Sorry there was a failure on our server.',
+    });
+  }
 };
 
 const putPasswordById = async (req, res) => {
-  const { oldPassword, newPassword, confirmPassword } = req.body;
-  const { id } = req.params;
-  const validationResult = validateUser({ newPassword });
-  if (!validationResult.isValid) {
-    throw new InvariantError(`Validation error: ${validationResult.message}`);
+  try {
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+    const { id } = req.params;
+    const validationResult = validateUser({ newPassword });
+    if (!validationResult.isValid) {
+      throw new InvariantError(`Validation error: ${validationResult.message}`);
+    }
+
+    const result = await editPasswordById({ oldPassword, newPassword, confirmPassword, id });
+
+    const response = res.status(201).json({
+      status: 'success',
+      message: result
+    });
+    return response;
+  } catch (e) {
+    if (e instanceof ClientError) {
+      return res.status(e.statusCode).send({
+        status: 'fail',
+        message: e.message,
+      });
+    }
+    return res.status(500).send({
+      status: 'fail',
+      message: 'Sorry there was a failure on our server.',
+    });
   }
-
-  const result = await editPasswordById({ oldPassword, newPassword, confirmPassword, id });
-
-  const response = res.status(201).json({
-    status: 'success',
-    message: result
-  });
-  return response;
 };
 
 const getUsers = async (req, res) => {
-  const result = await findUsers();
-  const response = res.status(201).json({
-    status: 'success',
-    message: result
-  });
-  return response;
+  try {
+    const result = await findUsers();
+    const response = res.status(201).json({
+      status: 'success',
+      message: result
+    });
+    return response;
+  } catch (e) {
+    if (e instanceof ClientError) {
+      return res.status(e.statusCode).send({
+        status: 'fail',
+        message: e.message,
+      });
+    }
+    return res.status(500).send({
+      status: 'fail',
+      message: 'Sorry there was a failure on our server.',
+    });
+  }
 };
 
 const getUsersStatistics = async (req, res) => {
-  const result = await findUsersStatistics();
-  const response = res.status(201).json({
-    status: 'success',
-    message: result
-  });
-  return response;
+  try {
+    const result = await findUsersStatistics();
+    const response = res.status(201).json({
+      status: 'success',
+      message: result
+    });
+    return response;
+  } catch (e) {
+    if (e instanceof ClientError) {
+      return res.status(e.statusCode).send({
+        status: 'fail',
+        message: e.message,
+      });
+    }
+    return res.status(500).send({
+      status: 'fail',
+      message: 'Sorry there was a failure on our server.',
+    });
+  }
 };
 
 
