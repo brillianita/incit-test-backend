@@ -128,6 +128,24 @@ const findUsers = async () => {
   return rows.map(mapDBToModel);
 };
 
+const findUsersStatistics = async () => {
+  const resTotalSignedUp = await pool.query('SELECT COUNT(*) AS total_sign_up FROM users');
+  const resTotalActiveToday = await pool.query('SELECT COUNT(*) AS total_active_today FROM users WHERE DATE(last_login_at) = CURRENT_DATE');
+  const resAvgActive7Days = await pool.query(`
+    SELECT AVG(active_day_count) AS avg_count FROM (
+    SELECT COUNT(*) AS active_day_count
+    FROM users
+    WHERE last_login_at >= CURRENT_DATE - INTERVAL '7 days'
+    GROUP BY DATE(last_login_at)
+) AS subquery`);
+  const result = {
+    totalSignUp: resTotalSignedUp.rows[0].total_sign_up,
+    totalActiveToday: resTotalActiveToday.rows[0].total_active_today,
+    avgActiveDays: resAvgActive7Days.rows[0].avg_count
+  };
+
+  return result;
+};
 
 module.exports = {
   addUser,
@@ -136,5 +154,6 @@ module.exports = {
   verifyEmailByToken,
   editNameById,
   editPasswordById,
-  findUsers
+  findUsers,
+  findUsersStatistics
 };

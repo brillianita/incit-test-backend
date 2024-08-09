@@ -38,7 +38,6 @@ exports.up = (pgm) => {
     updated_at: {
       type: 'TIMESTAMP',
       notNull: true,
-      default: null
     },
     login_count: {
       type: 'INTEGER',
