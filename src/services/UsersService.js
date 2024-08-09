@@ -123,6 +123,11 @@ const editPasswordById = async ({ oldPassword, newPassword, confirmPassword, id 
   return rows[0];
 };
 
+const findUsers = async () => {
+  const { rows } = await pool.query('SELECT email, created_at, login_count, logout_at FROM users');
+  return rows.map(mapDBToModel);
+};
+
 
 module.exports = {
   addUser,
@@ -130,5 +135,6 @@ module.exports = {
   verifyUserCredential,
   verifyEmailByToken,
   editNameById,
-  editPasswordById
+  editPasswordById,
+  findUsers
 };

@@ -1,5 +1,5 @@
 const { validateUser } = require('../../validators/user');
-const { addUser, verifyEmailByToken, editNameById, editPasswordById } = require('../../services/usersService');
+const { addUser, verifyEmailByToken, editNameById, editPasswordById, findUsers } = require('../../services/usersService');
 const { sendVerificationEmail } = require('../../services/emailService');
 const InvariantError = require('../../exceptions/InvariantError');
 
@@ -58,10 +58,20 @@ const putPasswordById = async (req, res) => {
   return response;
 };
 
+const getUsers = async (req, res) => {
+  const result = await findUsers();
+  const response = res.status(201).json({
+    status: 'success',
+    message: result
+  });
+  return response;
+};
+
 
 module.exports = {
   postUserHandler,
   putVerifyEmail,
   putNameById,
-  putPasswordById
+  putPasswordById,
+  getUsers
 };
