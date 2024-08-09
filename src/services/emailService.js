@@ -1,14 +1,17 @@
 const nodemailer = require('nodemailer');
-const emailConfig = require('../config/emailConfig');
 
-const transporter = nodemailer.createTransport({
-  service: emailConfig.service,
-  auth: emailConfig.auth
-});
 
 const sendVerificationEmail = async (to, token) => {
+  const transporter = nodemailer.createTransport({
+    service: 'Gmail',
+    auth: {
+      user: process.env.USER,
+      pass: process.env.PASS,
+    },
+  });
+
   const mailOptions = {
-    from: emailConfig.auth.user,
+    from: process.env.USER,
     to: to,
     subject: 'Verify Your Email',
     html: `<p>Thank you for registering with us. Please verify your email by clicking on the link below:</p>
