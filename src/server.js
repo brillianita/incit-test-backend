@@ -1,8 +1,12 @@
 const express = require('express');
 const app = express();
 const ClientError = require('./exceptions/ClientError');
+const cookieParser = require('cookie-parser');
+
+app.use(cookieParser());
 
 const userRoutes = require('./api/users/routes');
+const authenticationRoutes = require('./api/authentications/routes');
 
 const PORT = process.env.PORT || 3300;
 
@@ -19,8 +23,9 @@ app.listen(PORT, () => {
   console.log(`API is listening on port ${PORT}`);
 });
 
-// ROuting API using base path variable
+// Routing API using base path variable
 app.use(userRoutes);
+app.use(authenticationRoutes);
 
 app.use((err, req, res, next) => {
   if (err instanceof Error) {

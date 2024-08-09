@@ -43,11 +43,12 @@ const verifyNewEmail = async (email) => {
   }
 };
 
-const verifyUserCredential = async (email, password) => {
+const verifyUserCredential = async ({ email, password }) => {
   const query = {
-    text: 'SELECT id, password FROM users WHERE email = $1',
+    text: 'SELECT id, password FROM users WHERE email = $1 AND is_verified = true',
     values: [email],
   };
+
 
   const result = await pool.query(query);
 
