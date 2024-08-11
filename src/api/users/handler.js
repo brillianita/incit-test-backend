@@ -187,7 +187,6 @@ const getUsersById = async (req, res) => {
     if (!result) {
       throw new InvariantError('User not found');
     }
-    console.log('result get userbyid');
     const response = res.status(200).json({
       status: 'success',
       data: result
