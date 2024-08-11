@@ -1,5 +1,5 @@
 const { validateUser } = require('../../validators/user');
-const { addUser, verifyEmailByToken, editNameById, editPasswordById, findUsers, findUsersStatistics, editToken } = require('../../services/usersService');
+const { addUser, verifyEmailByToken, editNameById, editPasswordById, findUsers, findUsersStatistics, editToken, findUserByKeyword } = require('../../services/UsersService');
 const { sendVerificationEmail } = require('../../services/emailService');
 const InvariantError = require('../../exceptions/InvariantError');
 const ClientError = require('../../exceptions/ClientError');
@@ -12,13 +12,13 @@ const postUserHandler = async (req, res) => {
       throw new InvariantError(`Validation error: ${validationResult.message}`);
     }
 
-    const userId = await addUser({ name: null, email, password, confirmPassword, isVerified: false, isOauth: false });
-    await sendVerificationEmail(email, userId.verification_token);
+    const result = await addUser({ name: null, email, password, confirmPassword, isVerified: false, isOauth: false });
+    await sendVerificationEmail(email, result.verification_token);
 
     const response = res.status(201).json({
       status: 'success',
       data: {
-        userId
+        result
       }
     });
     return response;
@@ -39,13 +39,9 @@ const postUserHandler = async (req, res) => {
 const putVerifyEmail = async (req, res) => {
   try {
     const { token } = req.query;
-    const result = await verifyEmailByToken({ token });
+    await verifyEmailByToken({ token });
 
-    const response = res.status(201).json({
-      status: 'success',
-      message: result
-    });
-    return response;
+    res.redirect('http://localhost:5173/login');
   } catch (e) {
     if (e instanceof ClientError) {
       return res.status(e.statusCode).send({
@@ -87,14 +83,14 @@ const putNameById = async (req, res) => {
 
 const putPasswordById = async (req, res) => {
   try {
-    const { oldPassword, newPassword, confirmPassword } = req.body;
+    const { oldPassword, password, confirmPassword } = req.body;
     const { id } = req.params;
-    const validationResult = validateUser({ newPassword });
+    const validationResult = validateUser({ password });
     if (!validationResult.isValid) {
       throw new InvariantError(`Validation error: ${validationResult.message}`);
     }
 
-    const result = await editPasswordById({ oldPassword, newPassword, confirmPassword, id });
+    const result = await editPasswordById({ oldPassword, password, confirmPassword, id });
 
     const response = res.status(201).json({
       status: 'success',
@@ -120,7 +116,7 @@ const getUsers = async (req, res) => {
     const result = await findUsers();
     const response = res.status(201).json({
       status: 'success',
-      message: result
+      data: result
     });
     return response;
   } catch (e) {
@@ -142,7 +138,7 @@ const getUsersStatistics = async (req, res) => {
     const result = await findUsersStatistics();
     const response = res.status(201).json({
       status: 'success',
-      message: result
+      data: result
     });
     return response;
   } catch (e) {
@@ -183,6 +179,34 @@ const resendEmailVerification = async (req, res) => {
   }
 };
 
+const getUsersById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await findUserByKeyword(id);
+
+    if (!result) {
+      throw new InvariantError('User not found');
+    }
+    console.log('result get userbyid');
+    const response = res.status(200).json({
+      status: 'success',
+      data: result
+    });
+    return response;
+  } catch (e) {
+    if (e instanceof ClientError) {
+      return res.status(e.statusCode).send({
+        status: 'fail',
+        message: e.message,
+      });
+    }
+    return res.status(500).send({
+      status: 'fail',
+      message: 'Sorry there was a failure on our server.',
+    });
+  }
+};
+
 module.exports = {
   postUserHandler,
   putVerifyEmail,
@@ -190,5 +214,6 @@ module.exports = {
   putPasswordById,
   getUsers,
   getUsersStatistics,
-  resendEmailVerification
+  resendEmailVerification,
+  getUsersById
 };

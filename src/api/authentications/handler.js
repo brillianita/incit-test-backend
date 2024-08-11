@@ -1,20 +1,36 @@
-const tokenManager = require('../../tokenize/tokenManager');
-const { verifyUserCredential } = require('../../services/usersService');
+const { generateToken } = require('../../tokenize/tokenManager');
 const ClientError = require('../../exceptions/ClientError');
+const { sendVerificationEmail } = require('../../services/emailService');
+const { verifyUserCredential, editLogoutInfo, editLoginInfo } = require('../../services/UsersService');
+const { nanoid } = require('nanoid');
+const AuthenticationError = require('../../exceptions/AuthenticationError');
 
 const postAuthenticationByEmail = async (req, res) => {
   try {
+    const tokenVerify = nanoid(16);
     const { email, password } = req.body;
-    const id = await verifyUserCredential({ email, password });
-    let token;
-    const cookie = req.headers.cookie;
-    const oldToken = cookie.split('; ').find((row) => row.startsWith('token=')).split('=')[1];
-    if (oldToken) {
+
+    const { id, isVerified } = await verifyUserCredential({ email, password });
+
+    if (!isVerified) {
+      sendVerificationEmail(email, tokenVerify);
+      throw new AuthenticationError('Please verify your email first');
+    }
+    let token = generateToken({ id });
+
+    const cookie = req.cookies;
+    if (cookie.token) {
+      const oldToken = cookie.token;
       token = oldToken;
     } else {
-      token = tokenManager.generateAccessToken({ id });
+      token = generateToken({ id });
+      await editLoginInfo({ id });
     }
     res.cookie('token', token, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+    });
+    res.cookie('id', id, {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
     });
@@ -22,6 +38,7 @@ const postAuthenticationByEmail = async (req, res) => {
     const response = res.status(201).json({
       status: 'success',
       data: {
+        id,
         token
       }
     });
@@ -42,21 +59,27 @@ const postAuthenticationByEmail = async (req, res) => {
 
 const postAuthenticationByGoogle = async (req, res) => {
   try {
-    const { id } = req;
-    let token;
-    const cookie = req.headers.cookie;
-    const oldToken = cookie.split('; ').find((row) => row.startsWith('token=')).split('=')[1];
-    if (oldToken) {
+    const { id } = req.user;
+    let token = generateToken({ id });
+
+    const cookie = req.cookies;
+    if (cookie.token) {
+      const oldToken = cookie.token;
       token = oldToken;
     } else {
-      token = tokenManager.generateAccessToken({ id });
+      token = generateToken({ id });
+      await editLoginInfo({ id });
     }
     res.cookie('token', token, {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
     });
+    res.cookie('id', id, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+    });
 
-    res.redirect('/profile');
+    res.redirect('http://localhost:5173/dashboard');
   } catch (e) {
     if (e instanceof ClientError) {
       return res.status(e.statusCode).send({
@@ -75,20 +98,26 @@ const postAuthenticationByFacebook = async (req, res) => {
   try {
 
     const { id } = req.user;
-    let token;
-    const cookie = req.headers.cookie;
-    const oldToken = cookie.split('; ').find((row) => row.startsWith('token=')).split('=')[1];
-    if (oldToken) {
+    let token = generateToken({ id });
+    const cookie = req.cookies;
+
+    if (cookie.token) {
+      const oldToken = cookie.token;
       token = oldToken;
     } else {
-      token = tokenManager.generateAccessToken({ id });
+      token = generateToken({ id });
+      await editLoginInfo({ id });
     }
     res.cookie('token', token, {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
     });
+    res.cookie('id', id, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+    });
 
-    res.redirect('/profile');
+    res.redirect('http://localhost:5173/dashboard');
   } catch (e) {
     if (e instanceof ClientError) {
       return res.status(e.statusCode).send({
@@ -109,7 +138,13 @@ const profile = async (req, res) => {
 
 const deleteAuthentication = async (req, res) => {
   try {
+    const { id } = req.params;
+    await editLogoutInfo({ id });
     res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+    });
+    res.clearCookie('id', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
     });
@@ -120,9 +155,11 @@ const deleteAuthentication = async (req, res) => {
         }
       });
     }
-
-    // Redirect user to the homepage or login page
-    res.redirect('/');
+    const response = res.status(200).json({
+      status: 'success',
+      message: 'logout successfully'
+    });
+    return response;
   } catch (e) {
     if (e instanceof ClientError) {
       return res.status(e.statusCode).send({

@@ -89,25 +89,26 @@ const verifyEmailByToken = async ({ token }) => {
 
 const verifyUserCredential = async ({ email, password }) => {
   const query = {
-    text: 'SELECT id, password FROM users WHERE email = $1 AND is_verified = true',
+    text: 'SELECT id, password, is_verified FROM users WHERE email = $1',
     values: [email],
   };
 
 
-  const result = await pool.query(query);
+  const { rows } = await pool.query(query);
+  const result = rows.map(mapDBToModel);
 
-  if (!result.rows.length) {
+  if (!result.length) {
     throw new AuthenticationError('The credentials you provided are incorrect.');
   }
 
-  const { id, password: hashedPassword } = result.rows[0];
+  const { id, password: hashedPassword, isVerified } = result[0];
 
   const match = await bcrypt.compare(password, hashedPassword);
 
   if (!match) {
     throw new AuthenticationError('The password you entered is incorrect.');
   }
-  return id;
+  return { id, isVerified };
 };
 
 const editNameById = async ({ id, name }) => {
@@ -122,18 +123,19 @@ const editNameById = async ({ id, name }) => {
   return rows[0];
 };
 
-const editPasswordById = async ({ oldPassword, newPassword, confirmPassword, id }) => {
+const editPasswordById = async ({ oldPassword, password, confirmPassword, id }) => {
 
   const result = await findUserByKeyword(id);
+
   console.log('result', result[0]);
   const match = await bcrypt.compare(oldPassword, result[0].password);
   if (!match) {
     throw new AuthenticationError('The old password you entered is incorrect.');
   }
-  if (newPassword !== confirmPassword) {
+  if (password !== confirmPassword) {
     throw new InvariantError('The passwords entered do not match. Please try again');
   }
-  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  const hashedPassword = await bcrypt.hash(password, 10);
   const query = {
     text: 'UPDATE users SET password = $1 WHERE id = $2 RETURNING id',
     values: [hashedPassword, id]
@@ -160,11 +162,14 @@ const findUsersStatistics = async () => {
     WHERE last_login_at >= CURRENT_DATE - INTERVAL '7 days'
     GROUP BY DATE(last_login_at)
 ) AS subquery`);
-  const result = {
-    totalSignUp: resTotalSignedUp.rows[0].total_sign_up,
-    totalActiveToday: resTotalActiveToday.rows[0].total_active_today,
-    avgActiveDays: resAvgActive7Days.rows[0].avg_count
-  };
+  // Assuming 'average' is the key in the row object that you need to parse
+  const average = parseFloat(resAvgActive7Days.rows[0].avg_count).toFixed(2);
+
+  const result = [
+    resTotalSignedUp.rows[0].total_sign_up,
+    resTotalActiveToday.rows[0].total_active_today,
+    average
+  ];
 
   return result;
 };
@@ -186,6 +191,38 @@ const editToken = async ({ email }) => {
   return result[0];
 };
 
+const editLogoutInfo = async ({ id }) => {
+  const logoutAt = new Date();
+  const updatedAt = new Date();
+  const query = {
+    text: 'UPDATE users SET logout_at = $1, last_login_at = $2, updated_at = $3 WHERE id = $4 RETURNING id',
+    values: [logoutAt, null, updatedAt, id]
+  };
+  console.log(id);
+  const { rows } = await pool.query(query);
+  return rows[0];
+};
+
+const editLoginInfo = async ({ id }) => {
+  try {
+    console.log('service');
+    const lastLoginAt = new Date();
+    const updatedAt = new Date();
+    const result = await findUserByKeyword(id);
+    console.log('result + 1', result[0].loginCount);
+    const newLoginCount = result[0].loginCount + 1;
+
+    const query = {
+      text: 'UPDATE users SET last_login_at = $1, logout_at = $2, updated_at = $3, login_count = $4 WHERE id = $5 RETURNING id',
+      values: [lastLoginAt, null, updatedAt, newLoginCount, id]
+    };
+    const { rows } = await pool.query(query);
+    return rows[0];
+  } catch (e) {
+    console.log(e);
+  }
+};
+
 
 module.exports = {
   addUser,
@@ -196,5 +233,7 @@ module.exports = {
   editPasswordById,
   findUsers,
   findUsersStatistics,
-  editToken
+  editToken,
+  editLogoutInfo,
+  editLoginInfo
 };

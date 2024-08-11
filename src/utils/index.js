@@ -10,7 +10,8 @@ const mapDBToModel = ({
   updated_at,
   login_count,
   last_login_at,
-  logout_at
+  logout_at,
+  is_oauth,
 }) => ({
   id,
   name,
@@ -22,7 +23,8 @@ const mapDBToModel = ({
   updatedAt: updated_at,
   loginCount: login_count,
   lastLoginAt: last_login_at,
-  logoutAt: logout_at
+  logoutAt: logout_at,
+  isOauth: is_oauth
 });
 
 module.exports = { mapDBToModel };

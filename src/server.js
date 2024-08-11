@@ -4,6 +4,15 @@ const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const passport = require('passport');
 require('./config/passportSetup')(passport);
+const cors = require('cors');
+
+const corsOptions = {
+  origin: ['http://localhost:5173'],
+  credentials: true
+};
+
+//use cors
+app.use(cors(corsOptions));
 
 app.use(cookieParser());
 

@@ -2,7 +2,7 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const FacebookStrategy = require('passport-facebook').Strategy;
-const { addUser, findUserById } = require('../services/usersService');
+const { addUser, findUserByKeyword } = require('../services/UsersService');
 require('dotenv').config();
 module.exports = (passport) => {
   passport.use(new GoogleStrategy({
@@ -35,6 +35,6 @@ module.exports = (passport) => {
   });
 
   passport.deserializeUser((id, done) => {
-    findUserById(id).then((user) => done(null, user)).catch((err) => done(err, null));
+    findUserByKeyword(id).then((user) => done(null, user)).catch((err) => done(err, null));
   });
 };
