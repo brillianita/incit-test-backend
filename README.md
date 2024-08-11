@@ -5,8 +5,6 @@
 - Clone repository with command `git clone <alamat_repo>`
 - Move to directory traveloka-ocr-api `cd backend-incit-test`
 - Install dependencies using command `npm install`
-- Rename .env-example to .env  
-  Make sure that .env has content like this:
 
   ```
   # server configuration (dev)

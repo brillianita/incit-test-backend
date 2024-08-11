@@ -127,7 +127,6 @@ const editPasswordById = async ({ oldPassword, password, confirmPassword, id }) 
 
   const result = await findUserByKeyword(id);
 
-  console.log('result', result[0]);
   const match = await bcrypt.compare(oldPassword, result[0].password);
   if (!match) {
     throw new AuthenticationError('The old password you entered is incorrect.');
@@ -198,18 +197,15 @@ const editLogoutInfo = async ({ id }) => {
     text: 'UPDATE users SET logout_at = $1, last_login_at = $2, updated_at = $3 WHERE id = $4 RETURNING id',
     values: [logoutAt, null, updatedAt, id]
   };
-  console.log(id);
   const { rows } = await pool.query(query);
   return rows[0];
 };
 
 const editLoginInfo = async ({ id }) => {
   try {
-    console.log('service');
     const lastLoginAt = new Date();
     const updatedAt = new Date();
     const result = await findUserByKeyword(id);
-    console.log('result + 1', result[0].loginCount);
     const newLoginCount = result[0].loginCount + 1;
 
     const query = {
